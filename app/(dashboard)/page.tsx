@@ -1,5 +1,6 @@
 import { DashboardClient } from "@/components/events/dashboard-client";
 import { requireSessionPage } from "@/lib/auth/page";
+import { getRenderTimestamp } from "@/lib/date/now";
 import { toEventDTOs } from "@/lib/dto/event";
 import { EventService } from "@/lib/services/event";
 
@@ -13,6 +14,7 @@ export default async function DashboardPage() {
     <DashboardClient
       initialEvents={toEventDTOs(events)}
       timezone={session.user.timezone ?? null}
+      renderedAt={getRenderTimestamp()}
     />
   );
 }

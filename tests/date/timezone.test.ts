@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  addDaysToDateKey,
   endOfDayInTimeZone,
   getDateKey,
   getTimeKey,
   isSameDayInTimeZone,
+  isValidDateKey,
   isValidTimeZone,
+  parseDateKey,
   resolveTimeZone,
   zonedAllDayToUtc,
   zonedDateTimeToUtc,
@@ -73,5 +76,14 @@ describe("timezone helpers", () => {
 
     expect(isSameDayInTimeZone(a, b, "Europe/Moscow")).toBe(true);
     expect(isSameDayInTimeZone(a, b, "UTC")).toBe(false);
+  });
+
+  it("validates and manipulates date keys", () => {
+    expect(isValidDateKey("2026-05-20")).toBe(true);
+    expect(isValidDateKey("2026-02-30")).toBe(false);
+    expect(isValidDateKey("20.05.2026")).toBe(false);
+
+    expect(addDaysToDateKey("2026-12-31", 1)).toBe("2027-01-01");
+    expect(getDateKey(parseDateKey("2026-05-20"), "UTC")).toBe("2026-05-20");
   });
 });

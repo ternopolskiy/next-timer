@@ -6,7 +6,7 @@ import { EventService, type EventWriteInput } from "@/lib/services/event";
 import {
   eventFormSchema,
   eventIdSchema,
-  type EventFormInput,
+  type EventFormValues,
 } from "@/lib/validation/event";
 import { toEventDTO, type EventDTO } from "@/lib/dto/event";
 import {
@@ -20,7 +20,7 @@ import {
   zonedDateTimeToUtc,
 } from "@/lib/date/timezone";
 
-function parseEventInput(input: unknown): EventFormInput {
+function parseEventInput(input: unknown): EventFormValues {
   const parsed = eventFormSchema.safeParse(input);
 
   if (!parsed.success) {
@@ -43,7 +43,7 @@ function parseEventId(id: string): string {
   return parsed.data;
 }
 
-function toWriteInput(input: EventFormInput): EventWriteInput {
+function toWriteInput(input: EventFormValues): EventWriteInput {
   const startTime = input.isAllDay
     ? zonedAllDayToUtc(input.date, input.timezone)
     : zonedDateTimeToUtc(input.date, input.startTime, input.timezone);

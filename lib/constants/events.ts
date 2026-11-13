@@ -37,6 +37,17 @@ export const EVENT_COLORS = [
 
 export const DEFAULT_EVENT_COLOR = EVENT_COLORS[0].value;
 
+export const EVENT_GROUP_VALUES = ["today", "week", "later", "past"] as const;
+
+export type EventGroupKey = (typeof EVENT_GROUP_VALUES)[number];
+
+export const EVENT_GROUP_TITLES: Record<EventGroupKey, string> = {
+  today: "Сегодня",
+  week: "На этой неделе",
+  later: "Позже",
+  past: "Прошедшие",
+};
+
 export const REMINDER_VALUES = [0, 60, 1440, 10080] as const;
 
 export type ReminderMinutes = (typeof REMINDER_VALUES)[number];

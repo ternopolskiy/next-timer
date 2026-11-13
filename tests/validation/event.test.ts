@@ -31,7 +31,7 @@ describe("eventFormSchema", () => {
     const result = eventFormSchema.safeParse({
       ...validInput,
       isAllDay: true,
-      endTime: undefined,
+      endTime: "",
     });
 
     expect(result.success).toBe(true);
@@ -63,7 +63,7 @@ describe("eventFormSchema", () => {
   it("requires an end time for a timed event", () => {
     const result = eventFormSchema.safeParse({
       ...validInput,
-      endTime: undefined,
+      endTime: "",
     });
 
     expect(result.success).toBe(false);

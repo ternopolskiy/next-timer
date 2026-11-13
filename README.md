@@ -158,7 +158,7 @@ app/
 
 components/
   auth/                      # LoginForm
-  events/                    # EventCard, DashboardClient, CreateEventDialog
+  events/                    # EventCard, DashboardClient, EventFormDialog
   layout/                    # Header, ThemeToggle
   providers/                 # SessionProvider, ThemeProvider, Toaster
   timer/                     # TimerDisplay, TimeSlot, AnimatedDigit

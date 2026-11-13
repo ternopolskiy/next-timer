@@ -1,14 +1,13 @@
 import { z } from "zod";
 import {
-  DEFAULT_EVENT_COLOR,
   EVENT_CATEGORY_VALUES,
   REMINDER_VALUES,
 } from "@/lib/constants/events";
-import { isValidTimeZone } from "@/lib/date/timezone";
+import { isValidDateKey, isValidTimeZone } from "@/lib/date/timezone";
 
 const dateKeySchema = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Укажите дату в формате ГГГГ-ММ-ДД");
+  .refine(isValidDateKey, "Укажите существующую дату в формате ГГГГ-ММ-ДД");
 
 const timeKeySchema = z
   .string()
@@ -21,6 +20,10 @@ const reminderSchema = z.union([
   z.literal(REMINDER_VALUES[3]),
 ]);
 
+/**
+ * Схема формы события. Все поля обязательны, чтобы клиентская форма,
+ * Server Actions и тесты работали с одним и тем же типом значений.
+ */
 export const eventFormSchema = z
   .object({
     title: z
@@ -31,30 +34,18 @@ export const eventFormSchema = z
     description: z
       .string()
       .trim()
-      .max(2000, "Описание должно быть не длиннее 2000 символов")
-      .optional()
-      .default(""),
+      .max(2000, "Описание должно быть не длиннее 2000 символов"),
     date: dateKeySchema,
     startTime: timeKeySchema,
-    endTime: timeKeySchema.optional(),
-    isAllDay: z.boolean().default(false),
+    endTime: timeKeySchema.or(z.literal("")),
+    isAllDay: z.boolean(),
     color: z
       .string()
-      .regex(/^#[0-9A-Fa-f]{6}$/, "Выберите корректный цвет")
-      .default(DEFAULT_EVENT_COLOR),
-    category: z.enum(EVENT_CATEGORY_VALUES).default("other"),
-    emoji: z
-      .string()
-      .trim()
-      .max(8, "Эмодзи слишком длинное")
-      .optional()
-      .default(""),
-    reminderMinutes: reminderSchema.nullable().optional().default(null),
-    timezone: z
-      .string()
-      .refine(isValidTimeZone, "Неизвестный часовой пояс")
-      .optional()
-      .default("UTC"),
+      .regex(/^#[0-9A-Fa-f]{6}$/, "Выберите корректный цвет"),
+    category: z.enum(EVENT_CATEGORY_VALUES),
+    emoji: z.string().trim().max(8, "Эмодзи слишком длинное"),
+    reminderMinutes: reminderSchema.nullable(),
+    timezone: z.string().refine(isValidTimeZone, "Неизвестный часовой пояс"),
   })
   .superRefine((data, ctx) => {
     if (data.isAllDay) return;
@@ -77,7 +68,6 @@ export const eventFormSchema = z
     }
   });
 
-export type EventFormInput = z.infer<typeof eventFormSchema>;
-export type EventFormRawInput = z.input<typeof eventFormSchema>;
+export type EventFormValues = z.infer<typeof eventFormSchema>;
 
 export const eventIdSchema = z.string().min(1, "Некорректный идентификатор");
