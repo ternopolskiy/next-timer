@@ -8,33 +8,41 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String
-  events        Event[]
-  accounts      Account[]
-  sessions      Session[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                   String    @id @default(cuid())
+  name                 String?
+  email                String    @unique
+  emailVerified        DateTime?
+  image                String?
+  password             String
+  timezone             String?
+  notificationsEnabled Boolean   @default(false)
+  events               Event[]
+  accounts             Account[]
+  sessions             Session[]
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 model Event {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  startTime   DateTime
-  endTime     DateTime?
-  isAllDay    Boolean  @default(false)
-  color       String   @default("#3B82F6")
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String    @id @default(cuid())
+  title           String
+  description     String?
+  startTime       DateTime
+  endTime         DateTime?
+  isAllDay        Boolean   @default(false)
+  color           String    @default("#3B82F6")
+  timezone        String?
+  category        String    @default("other")
+  emoji           String?
+  reminderMinutes Int?
+  archivedAt      DateTime?
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([userId])
+  @@index([userId, startTime])
 }
 
 model Account {
