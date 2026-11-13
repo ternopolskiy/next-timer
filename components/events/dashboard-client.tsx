@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { DeleteEventDialog } from "@/components/events/delete-event-dialog";
+import { DashboardHero } from "@/components/events/dashboard-hero";
 import { EmptyState } from "@/components/events/empty-state";
 import { EventCard } from "@/components/events/event-card";
 import { EventFormDialog } from "@/components/events/event-form-dialog";
@@ -14,7 +15,8 @@ import {
   duplicateEventAction,
   updateEventAction,
 } from "@/lib/actions/event";
-import type { EventDTO } from "@/lib/dto/event";
+import { getEventStatus } from "@/lib/date/status";
+import { toEventTiming, type EventDTO } from "@/lib/dto/event";
 import {
   createEmptyEventFormValues,
   eventToFormValues,
@@ -55,6 +57,19 @@ export function DashboardClient({
           new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
       ),
     [events]
+  );
+
+  const nextEvent = useMemo(
+    () =>
+      sortedEvents.find(
+        (event) =>
+          getEventStatus(
+            toEventTiming(event),
+            now,
+            event.timezone ?? displayTimezone
+          ) !== "past"
+      ) ?? null,
+    [sortedEvents, now, displayTimezone]
   );
 
   const defaultValues = useMemo(() => {
@@ -101,43 +116,56 @@ export function DashboardClient({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Мои события
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Управляйте своими событиями и отслеживайте время
-          </p>
-        </div>
+      <div className="space-y-8">
+        <DashboardHero
+          event={nextEvent}
+          timezone={displayTimezone}
+          initialNow={renderedAt}
+          onCreate={() => setFormState({ mode: "create" })}
+        />
 
-        <Button
-          onClick={() => setFormState({ mode: "create" })}
-          className="min-h-11 rounded-full px-6"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Новое событие
-        </Button>
+        <section>
+          <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                Мои события
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Управляйте своими событиями и отслеживайте время
+              </p>
+            </div>
+
+            <Button
+              onClick={() => setFormState({ mode: "create" })}
+              className="min-h-11 rounded-full px-6"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Новое событие
+            </Button>
+          </div>
+
+          {sortedEvents.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {sortedEvents.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  timezone={displayTimezone}
+                  now={now}
+                  isDuplicating={duplicatingId === event.id}
+                  onEdit={(target) =>
+                    setFormState({ mode: "edit", event: target })
+                  }
+                  onDuplicate={handleDuplicate}
+                  onDelete={setDeleteTarget}
+                />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-
-      {sortedEvents.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {sortedEvents.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              timezone={displayTimezone}
-              now={now}
-              isDuplicating={duplicatingId === event.id}
-              onEdit={(target) => setFormState({ mode: "edit", event: target })}
-              onDuplicate={handleDuplicate}
-              onDelete={setDeleteTarget}
-            />
-          ))}
-        </div>
-      )}
 
       <EventFormDialog
         open={formState !== null}

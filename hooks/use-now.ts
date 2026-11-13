@@ -4,32 +4,46 @@ import { useCallback, useSyncExternalStore } from "react";
 
 const MINUTE_MS = 60_000;
 
-function subscribe(onStoreChange: () => void) {
-  const interval = window.setInterval(onStoreChange, MINUTE_MS);
-  document.addEventListener("visibilitychange", onStoreChange);
-
-  return () => {
-    window.clearInterval(interval);
-    document.removeEventListener("visibilitychange", onStoreChange);
-  };
-}
-
-function getSnapshot(): number {
-  return Math.floor(Date.now() / MINUTE_MS);
+interface UseNowOptions {
+  /** Останавливает обновления, сохраняя последнее значение. */
+  enabled?: boolean;
+  intervalMs?: number;
 }
 
 /**
- * Текущее время с обновлением раз в минуту. Серверный снимок
- * передаётся извне, поэтому разметка при гидратации совпадает.
+ * Текущее время с обновлением по таймеру. Серверный снимок передаётся
+ * извне, поэтому разметка при гидратации совпадает с серверной.
  */
-export function useNow(serverNow: number): Date {
-  const serverMinute = Math.floor(serverNow / MINUTE_MS);
-  const getServerSnapshot = useCallback(() => serverMinute, [serverMinute]);
-  const minute = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot
+export function useNow(
+  serverNow: number,
+  { enabled = true, intervalMs = MINUTE_MS }: UseNowOptions = {}
+): Date {
+  const getSnapshot = useCallback(
+    () => Math.floor(Date.now() / intervalMs),
+    [intervalMs]
   );
 
-  return new Date(minute * MINUTE_MS);
+  const getServerSnapshot = useCallback(
+    () => Math.floor(serverNow / intervalMs),
+    [serverNow, intervalMs]
+  );
+
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (!enabled) return () => {};
+
+      const interval = window.setInterval(onStoreChange, intervalMs);
+      document.addEventListener("visibilitychange", onStoreChange);
+
+      return () => {
+        window.clearInterval(interval);
+        document.removeEventListener("visibilitychange", onStoreChange);
+      };
+    },
+    [enabled, intervalMs]
+  );
+
+  const tick = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  return new Date(tick * intervalMs);
 }

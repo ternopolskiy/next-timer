@@ -1,21 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNow } from "@/hooks/use-now";
 import {
   calculateTimeLeft,
   type TimeLeft,
 } from "@/lib/date/countdown";
 
 interface UseCountdownOptions {
+  /** Снимок времени с сервера, чтобы разметка при гидратации совпадала. */
+  initialNow: number;
   /** Останавливает отсчёт, сохраняя текущее значение. */
   enabled?: boolean;
   intervalMs?: number;
-}
-
-interface Countdown {
-  timeLeft: TimeLeft;
-  /** Пересчитывает значение от текущего момента. */
-  reset: () => void;
 }
 
 /**
@@ -25,30 +21,13 @@ interface Countdown {
  */
 export function useCountdown(
   target: Date,
-  { enabled = true, intervalMs = 1000 }: UseCountdownOptions = {}
-): Countdown {
-  const targetTime = target.getTime();
-  const [now, setNow] = useState(() => Date.now());
+  {
+    initialNow,
+    enabled = true,
+    intervalMs = 1000,
+  }: UseCountdownOptions
+): TimeLeft {
+  const now = useNow(initialNow, { enabled, intervalMs });
 
-  useEffect(() => {
-    if (!enabled) return;
-
-    const tick = () => setNow(Date.now());
-    const interval = window.setInterval(tick, intervalMs);
-    document.addEventListener("visibilitychange", tick);
-
-    return () => {
-      window.clearInterval(interval);
-      document.removeEventListener("visibilitychange", tick);
-    };
-  }, [enabled, intervalMs]);
-
-  const timeLeft = useMemo(
-    () => calculateTimeLeft(new Date(targetTime), new Date(now)),
-    [targetTime, now]
-  );
-
-  const reset = useCallback(() => setNow(Date.now()), []);
-
-  return { timeLeft, reset };
+  return calculateTimeLeft(target, now);
 }
