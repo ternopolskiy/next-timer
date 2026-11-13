@@ -3,6 +3,9 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { env } from "@/lib/env";
+import { loginSchema } from "@/lib/validation/auth";
+import { rateLimit, resetRateLimit } from "./rate-limit";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
@@ -14,20 +17,33 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required");
+        const parsed = loginSchema.safeParse(credentials);
+
+        if (!parsed.success) {
+          throw new Error("Invalid email or password");
+        }
+
+        const { email, password } = parsed.data;
+        const rateLimitKey = `login:${email}`;
+        const attempt = rateLimit(rateLimitKey, {
+          limit: 10,
+          windowMs: 60_000,
+        });
+
+        if (!attempt.success) {
+          throw new Error("Too many login attempts");
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email },
         });
 
-        if (!user || !user.password) {
+        if (!user) {
           throw new Error("Invalid email or password");
         }
 
         const isPasswordValid = await bcrypt.compare(
-          credentials.password,
+          password,
           user.password
         );
 
@@ -35,17 +51,21 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid email or password");
         }
 
+        resetRateLimit(rateLimitKey);
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.image,
+          timezone: user.timezone,
         };
       },
     }),
   ],
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
   },
   pages: {
     signIn: "/login",
@@ -54,15 +74,19 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.timezone = user.timezone ?? null;
       }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.timezone = token.timezone ?? null;
       }
+
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: env.NEXTAUTH_SECRET,
 };

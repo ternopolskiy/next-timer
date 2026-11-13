@@ -2,19 +2,23 @@
 
 import { useRouter } from "next/navigation";
 import { Calendar, Clock } from "lucide-react";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
-import { Event } from "@/app/generated/prisma/client";
+import type { EventDTO } from "@/lib/dto/event";
+import { toEventTiming } from "@/lib/dto/event";
+import {
+  formatEventDate,
+  formatEventTime,
+} from "@/lib/date/format";
 
 interface EventCardProps {
-  event: Event;
+  event: EventDTO;
+  timezone: string | null;
 }
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, timezone }: EventCardProps) {
   const router = useRouter();
-  const startTime = new Date(event.startTime);
-  const endTime = event.endTime ? new Date(event.endTime) : null;
+  const timing = toEventTiming(event);
+  const displayTimezone = event.timezone ?? timezone ?? "UTC";
 
   return (
     <Card
@@ -25,6 +29,11 @@ export function EventCard({ event }: EventCardProps) {
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-lg tracking-tight truncate">
+            {event.emoji && (
+              <span className="mr-2" aria-hidden="true">
+                {event.emoji}
+              </span>
+            )}
             {event.title}
           </h3>
 
@@ -37,18 +46,15 @@ export function EventCard({ event }: EventCardProps) {
           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4 shrink-0" />
-              <span>
-                {format(startTime, "d MMMM", { locale: ru })}
-              </span>
+              <span>{formatEventDate(timing, displayTimezone)}</span>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4 shrink-0" />
-              <span>
-                {format(startTime, "HH:mm")}
-                {endTime && ` — ${format(endTime, "HH:mm")}`}
-              </span>
-            </div>
+            {!event.isAllDay && (
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>{formatEventTime(timing, displayTimezone)}</span>
+              </div>
+            )}
           </div>
         </div>
 

@@ -1,28 +1,30 @@
 import { prisma } from "@/lib/prisma";
-import { Event } from "@/app/generated/prisma/client";
+import { NotFoundError } from "@/lib/errors";
+import type { Event } from "@/app/generated/prisma/client";
 
-interface CreateEventInput {
+export interface EventWriteInput {
   title: string;
-  description?: string;
+  description: string | null;
   startTime: Date;
-  endTime?: Date;
-  isAllDay?: boolean;
-  color?: string;
-}
-
-interface UpdateEventInput {
-  title?: string;
-  description?: string;
-  startTime?: Date;
-  endTime?: Date;
-  isAllDay?: boolean;
-  color?: string;
+  endTime: Date | null;
+  isAllDay: boolean;
+  color: string;
+  timezone: string | null;
+  category: string;
+  emoji: string | null;
+  reminderMinutes: number | null;
 }
 
 export class EventService {
-  static async getAll(userId: string): Promise<Event[]> {
+  static async getAll(
+    userId: string,
+    options: { includeArchived?: boolean } = {}
+  ): Promise<Event[]> {
     return prisma.event.findMany({
-      where: { userId },
+      where: {
+        userId,
+        ...(options.includeArchived ? {} : { archivedAt: null }),
+      },
       orderBy: { startTime: "asc" },
     });
   }
@@ -33,7 +35,10 @@ export class EventService {
     });
   }
 
-  static async create(userId: string, input: CreateEventInput): Promise<Event> {
+  static async create(
+    userId: string,
+    input: EventWriteInput
+  ): Promise<Event> {
     return prisma.event.create({
       data: {
         ...input,
@@ -45,14 +50,15 @@ export class EventService {
   static async update(
     id: string,
     userId: string,
-    input: UpdateEventInput
+    input: EventWriteInput
   ): Promise<Event> {
     const existing = await prisma.event.findFirst({
       where: { id, userId },
+      select: { id: true },
     });
 
     if (!existing) {
-      throw new Error("Event not found");
+      throw new NotFoundError("Событие не найдено");
     }
 
     return prisma.event.update({
@@ -64,14 +70,41 @@ export class EventService {
   static async remove(id: string, userId: string): Promise<Event> {
     const existing = await prisma.event.findFirst({
       where: { id, userId },
+      select: { id: true },
     });
 
     if (!existing) {
-      throw new Error("Event not found");
+      throw new NotFoundError("Событие не найдено");
     }
 
     return prisma.event.delete({
       where: { id },
+    });
+  }
+
+  static async duplicate(id: string, userId: string): Promise<Event> {
+    const existing = await prisma.event.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existing) {
+      throw new NotFoundError("Событие не найдено");
+    }
+
+    return prisma.event.create({
+      data: {
+        title: `${existing.title} (копия)`,
+        description: existing.description,
+        startTime: existing.startTime,
+        endTime: existing.endTime,
+        isAllDay: existing.isAllDay,
+        color: existing.color,
+        timezone: existing.timezone,
+        category: existing.category,
+        emoji: existing.emoji,
+        reminderMinutes: existing.reminderMinutes,
+        userId,
+      },
     });
   }
 }

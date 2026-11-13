@@ -1,21 +1,23 @@
-# Timer App
+# Timer — личный трекер событий
 
 <p align="center">
-  Современное приложение для отслеживания событий с обратным отсчётом, выполненное в стиле Apple.
+  Приложение для отслеживания личных событий и обратного отсчёта до важных дат.
+  Все события видны только владельцу аккаунта.
 </p>
 
 ---
 
-##  Возможности
+## Возможности
 
-- 🔐 **Авторизация** — регистрация и вход с bcrypt хешированием паролей
-- 📅 **Управление событиями** — создание, просмотр, редактирование и удаление
-- ⏱️ **Обратный отсчёт** — анимированные цифры с плавными переходами
+- 🔐 **Личный аккаунт** — регистрация и вход, пароли через bcrypt, сессии в JWT
+- 📅 **События** — название, описание, дата, время, часовой пояс, цвет, категория, эмодзи
+- ⏱️ **Обратный отсчёт** — анимированные цифры, корректная работа с часовыми поясами
 - 🌗 **Тёмная и светлая тема** — переключение в один клик
-- 📱 **Адаптивный дизайн** — mobile-first подход, touch targets 44px+
--  **Apple-style дизайн** — glassmorphism, мягкие тени, Inter шрифт
+- 📱 **Адаптивный интерфейс** — mobile-first, touch targets 44px+
+- 🧱 **Server-first архитектура** — Server Components, Server Actions, zod-валидация
+- ✅ **Проверки** — ESLint, TypeScript, Vitest, GitHub Actions
 
-## 📸 Скриншоты
+## Скриншоты
 
 ### Дашборд
 
@@ -23,141 +25,206 @@
   <img src="img_for_readme/main_screen.jpg" alt="Главный экран" width="100%" />
 </p>
 
-Список событий с карточками, кнопка создания нового события, переключатель темы.
-
 ### Таймер события
 
 <p align="center">
   <img src="img_for_readme/timer_event.jpg" alt="Таймер" width="100%" />
 </p>
 
-Обратный отсчёт до события с анимированными цифрами и элементами управления.
-
-## 🛠 Стек технологий
+## Стек
 
 | Категория | Технологии |
 |-----------|-----------|
-| **Framework** | Next.js 16 (App Router) |
+| **Framework** | Next.js 16 (App Router, Turbopack) |
 | **Language** | TypeScript |
-| **Styling** | Tailwind CSS v4 + shadcn/ui |
-| **Database** | SQLite + Prisma ORM |
-| **Auth** | NextAuth.js (Credentials) |
+| **Styling** | Tailwind CSS v4 + shadcn/ui на Base UI |
+| **Database** | SQLite + Prisma 7 (better-sqlite3 adapter) |
+| **Auth** | NextAuth.js v4 (Credentials + JWT) |
+| **Validation** | Zod |
+| **Forms** | React Hook Form + zodResolver |
+| **Dates** | date-fns + date-fns-tz |
 | **Animations** | Framer Motion |
 | **Icons** | Lucide React |
 | **Themes** | next-themes |
 | **Notifications** | Sonner |
+| **Tests** | Vitest |
 
-## 🚀 Быстрый старт
+## Быстрый старт
 
-### 1. Установка зависимостей
-
-```bash
-cd my-timer
-npm install
-```
-
-### 2. Настройка окружения
-
-Скопируйте `.env.example` в `.env`:
+Требуется Node.js **20.9+**.
 
 ```bash
+npm ci
 cp .env.example .env
 ```
 
-Или создайте `.env` вручную:
+Заполните `.env`:
 
 ```env
 DATABASE_URL="file:./dev.db"
-NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_SECRET="your-random-32-byte-secret"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 
-Генерация секрета:
+Сгенерировать секрет:
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-### 3. Миграции базы данных
+Примените миграции и запустите:
 
 ```bash
-npx prisma generate
-npx prisma migrate dev
-```
-
-### 4. Запуск
-
-```bash
+npm run db:migrate
 npm run dev
 ```
 
-Откройте [http://localhost:3000](http://localhost:3000)
+Откройте [http://localhost:3000](http://localhost:3000).
 
-## 📦 Скрипты
+> Prisma Client генерируется автоматически через `postinstall`. Если папка
+> `app/generated/prisma` отсутствует, выполните `npm run db:generate`.
+
+## Скрипты
 
 | Команда | Описание |
 |---------|----------|
 | `npm run dev` | Запуск в режиме разработки |
-| `npm run build` | Сборка для продакшена |
+| `npm run build` | Production-сборка |
 | `npm run start` | Запуск собранного приложения |
-| `npm run lint` | Проверка кода ESLint |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | Проверка TypeScript |
+| `npm test` | Юнит-тесты |
+| `npm run test:watch` | Тесты в watch-режиме |
+| `npm run test:coverage` | Тесты с покрытием |
+| `npm run db:generate` | Генерация Prisma Client |
+| `npm run db:migrate` | Создать и применить миграцию (dev) |
+| `npm run db:deploy` | Применить миграции (prod) |
+| `npm run db:studio` | Prisma Studio |
 
-## 📁 Структура проекта
+## Архитектура
 
 ```
-my-timer/
-├── app/
-│   ├── (dashboard)/
-│   │   ├── event/[id]/page.tsx   # Страница таймера
-│   │   ├── layout.tsx             # Layout дашборда
-│   │   └── page.tsx               # Список событий
-│   ├── api/
-│   │   ├── auth/                  # NextAuth + регистрация
-│   │   └── events/                # CRUD события
-│   ├── login/page.tsx             # Авторизация
-│   ├── register/page.tsx          # Регистрация
-│   ├── layout.tsx                 # Root layout
-│   └── globals.css                # Глобальные стили
-├── components/
-│   ├── events/                    # EventCard, CreateEventDialog
-│   ├── layout/                    # Header, ThemeToggle
-│   ├── providers/                 # SessionProvider, ThemeProvider
-│   ├── timer/                     # TimerDisplay, AnimatedDigit
-│   └── ui/                        # shadcn/ui компоненты
-├── lib/
-│   ├── auth/                      # NextAuth config
-│   ├── services/                  # EventService
-│   ├── prisma.ts                  # Prisma client
-│   └── utils.ts                   # cn() helper
-├── prisma/
-│   └── schema.prisma              # Модели БД
-└── middleware.ts                  # Защита роутов
+Server Component (page)
+        │
+        ▼
+requireSessionPage() ── redirect("/login?callbackUrl=...")
+        │
+        ▼
+   EventService ── проверка userId ── Prisma ── SQLite
+        │
+        ▼
+      EventDTO (ISO-строки)
+        │
+        ▼
+Client Component (таймер, формы, фильтры)
+
+Мутации:
+Client → Server Action → zod → requireAuth → EventService → revalidatePath
 ```
 
-## 🎨 Дизайн-система
+Ключевые решения:
 
-### Цветовая палитра
+- **Server Components** для чтения данных: нет клиентского водопада
+  «сессия → fetch → API».
+- **Server Actions** для мутаций: одна точка входа, валидация на сервере,
+  `revalidatePath` после изменения.
+- **Сервисный слой** (`lib/services`) — единственный источник правды для
+  доступа к данным; каждый запрос ограничен `userId`.
+- **DTO** (`lib/dto`) отделяет клиент от Prisma: даты сериализуются в ISO.
+- **Zod** валидирует входные данные на границе (`lib/validation`).
+- **Типизированные ошибки** (`lib/errors`) дают одинаковые ответы для
+  Server Actions и route handlers.
+- **Single source of time** — все даты хранятся в UTC, отображаются в
+  часовом поясе события, all-day считается до локальной полуночи.
 
-| Тема | Фон | Карточки | Акцент |
-|------|-----|----------|--------|
-| **Light** | `#F5F5F7` | `#FFFFFF` | `#007AFF` |
-| **Dark** | `#000000` | `#1D1D1F` | `#007AFF` |
+## Структура проекта
 
-### Типографика
+```
+app/
+  (dashboard)/
+    layout.tsx
+    page.tsx                 # серверный дашборд
+    loading.tsx / error.tsx
+    event/[id]/
+      page.tsx               # серверная страница события
+      not-found.tsx
+  api/
+    auth/[...nextauth]/route.ts
+    auth/register/route.ts
+  login/page.tsx
+  register/page.tsx
+  layout.tsx
+  globals.css
 
-- **Шрифт:** Inter (аналог San Francisco)
-- **Заголовки:** `font-bold tracking-tight`
-- **Подписи:** `uppercase tracking-widest`
+components/
+  auth/                      # LoginForm
+  events/                    # EventCard, DashboardClient, CreateEventDialog
+  layout/                    # Header, ThemeToggle
+  providers/                 # SessionProvider, ThemeProvider, Toaster
+  timer/                     # TimerDisplay, TimeSlot, AnimatedDigit
+  ui/                        # shadcn/base-ui
 
-### Компоненты
+lib/
+  actions/                   # Server Actions
+  auth/                      # NextAuth options, session, rate limit
+  constants/                 # категории, цвета, напоминания
+  date/                      # часовые пояса, статусы, форматирование, отсчёт
+  dto/                       # мапперы Prisma → DTO
+  services/                  # EventService
+  validation/                # zod-схемы
+  errors.ts
+  env.ts
+  prisma.ts
 
-- **Скругления:** `rounded-2xl` (16px), `rounded-3xl` (24px), `rounded-full`
-- **Тени:** мягкие `shadow-lg shadow-black/5`
-- **Glassmorphism:** `backdrop-blur-xl bg-card/80`
-- **Touch targets:** минимум 44px (Apple HIG)
+prisma/
+  schema.prisma
+  migrations/                # коммитятся в git
 
-## 🔒 Безопасность
+tests/                       # Vitest
+proxy.ts                     # защита приватных маршрутов (Next.js 16 Proxy)
+```
 
-- Пароли хешируются через `bcrypt` (salt rounds: 12)
-- Сессии через JWT с `NEXTAUTH_SECRET`
-- Все запросы к событиям проверяют `session.user.id`
-- Middleware защищает роуты от неавторизованных пользователей
+## Безопасность
+
+- Пароли хешируются через bcrypt (salt rounds: 12).
+- Сессии — JWT с `NEXTAUTH_SECRET`, срок жизни 30 дней.
+- Все операции с событиями проверяют `session.user.id`.
+- Приватные страницы защищены `proxy.ts`; API и Server Actions проверяют
+  сессию самостоятельно.
+- Регистрация и вход ограничены rate-limit (in-memory; для нескольких
+  инстансов замените на Redis/Upstash).
+- `callbackUrl` санитизируется, чтобы исключить open redirect.
+- Секреты и база данных не попадают в git.
+
+## Тесты
+
+```bash
+npm test
+```
+
+Покрыты:
+
+- расчёт статусов событий (`upcoming`, `today`, `ongoing`, `past`);
+- границы all-day и часовых поясов, включая DST;
+- форматирование и русская плюрализация;
+- zod-валидация формы события.
+
+## Roadmap
+
+- [x] Server-first рефакторинг, DTO, zod, typed errors
+- [x] Миграции и `.env.example` в репозитории
+- [ ] Редактирование, удаление и дублирование событий из UI
+- [ ] Hero-блок ближайшего события, группировка, поиск и фильтры
+- [ ] Настройки профиля: часовой пояс, уведомления, смена пароля
+- [ ] PWA и напоминания
+- [ ] Экспорт `.ics` и JSON
+- [ ] Повторяющиеся события и календарный вид (опционально)
+
+## Деплой
+
+Для локальной разработки используется SQLite. Для продакшена с постоянным
+хранилищем нужна PostgreSQL (например, Neon) или Turso/libSQL: замените
+`DATABASE_URL`, provider в `prisma/schema.prisma` и адаптер Prisma, затем
+выполните `npm run db:deploy`.
+
+Не забудьте задать `NEXTAUTH_SECRET` (минимум 32 символа) и `NEXTAUTH_URL`.

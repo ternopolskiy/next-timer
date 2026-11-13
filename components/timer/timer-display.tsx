@@ -3,35 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { TimeSlot } from "./time-slot";
 import { TimerControls } from "./timer-controls";
+import {
+  calculateTimeLeft,
+  type TimeLeft,
+} from "@/lib/date/countdown";
 
 interface TimerDisplayProps {
   targetDate: Date;
   isAllDay: boolean;
-}
-
-interface TimeLeft {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-  total: number;
-}
-
-function calculateTimeLeft(target: Date): TimeLeft {
-  const now = new Date();
-  const difference = target.getTime() - now.getTime();
-
-  if (difference <= 0) {
-    return { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
-  }
-
-  return {
-    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-    minutes: Math.floor((difference / 1000 / 60) % 60),
-    seconds: Math.floor((difference / 1000) % 60),
-    total: difference,
-  };
 }
 
 export function TimerDisplay({ targetDate, isAllDay }: TimerDisplayProps) {

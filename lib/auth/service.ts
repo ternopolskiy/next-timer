@@ -1,5 +1,6 @@
-import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
+import { ConflictError } from "@/lib/errors";
 
 interface RegisterInput {
   name: string;
@@ -9,20 +10,24 @@ interface RegisterInput {
 
 export class AuthService {
   static async register(input: RegisterInput) {
+    const email = input.email.trim().toLowerCase();
+    const name = input.name.trim() || email;
+
     const existingUser = await prisma.user.findUnique({
-      where: { email: input.email },
+      where: { email },
+      select: { id: true },
     });
 
     if (existingUser) {
-      throw new Error("User already exists");
+      throw new ConflictError("Пользователь с таким email уже существует");
     }
 
     const hashedPassword = await bcrypt.hash(input.password, 12);
 
-    const user = await prisma.user.create({
+    return prisma.user.create({
       data: {
-        name: input.name,
-        email: input.email,
+        name,
+        email,
         password: hashedPassword,
       },
       select: {
@@ -30,10 +35,9 @@ export class AuthService {
         name: true,
         email: true,
         image: true,
+        timezone: true,
         createdAt: true,
       },
     });
-
-    return user;
   }
 }

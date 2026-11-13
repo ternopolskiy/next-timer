@@ -15,8 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Timer App",
-  description: "A modern timer application",
+  title: {
+    default: "Timer — личный трекер событий",
+    template: "%s — Timer",
+  },
+  description:
+    "Личное приложение для отслеживания событий и обратного отсчёта до важных дат.",
+  applicationName: "Timer",
 };
 
 export default function RootLayout({
@@ -25,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="ru" className={`${inter.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
       </body>

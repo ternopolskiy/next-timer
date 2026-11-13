@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Timer } from "lucide-react";
+import { registerSchema } from "@/lib/validation/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -19,19 +20,34 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const parsed = registerSchema.safeParse({ name, email, password });
+
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Проверьте данные");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(parsed.data),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || "Ошибка регистрации");
+        const firstFieldError = data.fieldErrors
+          ? Object.values(data.fieldErrors)[0]
+          : undefined;
+        toast.error(
+          (Array.isArray(firstFieldError) ? firstFieldError[0] : undefined) ||
+            data.error ||
+            "Ошибка регистрации"
+        );
         return;
       }
 
@@ -68,6 +84,7 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Иван Иванов"
+              autoComplete="name"
               className="rounded-xl min-h-11"
             />
           </div>
@@ -80,6 +97,7 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
+              autoComplete="email"
               required
               className="rounded-xl min-h-11"
             />
@@ -92,9 +110,10 @@ export default function RegisterPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Минимум 6 символов"
+              placeholder="Минимум 8 символов"
+              autoComplete="new-password"
               required
-              minLength={6}
+              minLength={8}
               className="rounded-xl min-h-11"
             />
           </div>
